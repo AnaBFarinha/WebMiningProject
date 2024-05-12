@@ -30,31 +30,31 @@ def process_reviews_and_summary(data, app_id, game_name):
     
 
     # Normalize reviews data
-    reviews_df = pd.json_normalize(reviews_data, sep='_')
-    reviews_df['game_id'] = app_id
-    reviews_df['game_name'] = game_name
+    reviews_df_games = pd.json_normalize(reviews_data, sep='_')
+    reviews_df_games['game_id'] = app_id
+    reviews_df_games['game_name'] = game_name
     
     # Add summary data to each row
     for key, value in summary_data.items():
-        reviews_df[key] = value
+        reviews_df_games[key] = value
 
-    return reviews_df
+    return reviews_df_games
 
 
 games_list = get_steam_gamesIDs()
 #games_list = games_list[:20]
-reviews_dfs = []
+reviews_df_gamess = []
 
 for game in games_list:
     app_id = game['appid']
     game_name = game['name']
     reviews_data = get_steam_reviews(app_id)
     if reviews_data:
-        reviews_df = process_reviews_and_summary(reviews_data, app_id, game_name)
-        reviews_dfs.append(reviews_df)
+        reviews_df_games = process_reviews_and_summary(reviews_data, app_id, game_name)
+        reviews_df_gamess.append(reviews_df_games)
 
 # Concatenate all the DataFrames into a single DataFrame
-complete_reviews = pd.concat(reviews_dfs, ignore_index=True)
+complete_reviews = pd.concat(reviews_df_gamess, ignore_index=True)
 
 # Display the concatenated DataFrame
 print(complete_reviews.head())

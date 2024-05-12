@@ -44,12 +44,12 @@ def fetch_game_details(app_ids):
 app_ids = [2728090, 2171530, 2169845, 2169844] 
 
 # Fetching game details
-game_details_df = fetch_game_details(app_ids)
+game_details_df_games = fetch_game_details(app_ids)
 #uncomment this line to use the list extracted from the other code
-#game_details_df = fetch_game_details(games_list)
+#game_details_df_games = fetch_game_details(games_list)
 
 # Displaying the DataFrame
-print(game_details_df)
+print(game_details_df_games)
 
 # Optionally save to CSV
-game_details_df.to_csv('steam_game_details.csv', index=False)
+game_details_df_games.to_csv('steam_game_details.csv', index=False)
