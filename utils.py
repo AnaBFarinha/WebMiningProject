@@ -4,7 +4,7 @@ import re
 import json
 import os
 import time
-from utils import *
+from urllib.parse import quote
 
 ###########################################################################
 
@@ -132,3 +132,55 @@ def fetch_recommendations(game_list):
 
     # Save final progress
     save_progress(game_list, games_details)
+
+
+###########################################################################
+
+# Steam Reviews
+
+###########################################################################
+
+def get_steam_reviews(app_id, cursor='*'):
+    url = f"https://store.steampowered.com/appreviews/{app_id}?json=1&filter=recent&language=english&cursor={cursor}&num_per_page=100"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        if data['success'] == 1:
+            return data
+        else:
+            print(f"Failed to get valid reviews for app ID {app_id}.")
+            print(data)
+            return data
+    else:
+        print(f"Failed to get reviews for app ID {app_id}. Status code: {response.status_code}")
+        return None
+
+def fetch_all_reviews(app_id):
+    cursor = '*'
+    all_reviews = []
+    
+    while True:
+        data = get_steam_reviews(app_id, cursor)
+        if data is None or data['query_summary']['num_reviews'] == 0:
+            break
+        
+        # Collect reviews
+        reviews = data['reviews']
+        all_reviews.extend(reviews)
+        
+        # Update cursor
+        cursor = quote(data['cursor'])
+    
+    # Create a DataFrame from reviews
+    reviews_df = pl.DataFrame(all_reviews)
+    num_entries = len(reviews_df)
+
+    # Specify the directory and file name for the parquet file
+    directory = "data\\parquets"
+    file_name = f"{app_id}_reviews_{num_entries}.parquet"
+    file_path = os.path.join(directory, file_name)
+    
+    # Save to parquet
+    reviews_df.write_parquet(file_path)
+
+    return num_entries
