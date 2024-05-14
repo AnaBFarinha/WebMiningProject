@@ -16,7 +16,7 @@ def get_steam_gamesIDs():
     url = f"http://api.steampowered.com/ISteamApps/GetAppList/v2/"
     response = requests.get(url)
     data = response.json()
-    return data['applist']['games']  # This is a list of dictionaries with 'appid' and 'name'
+    return data['applist']['app']  # This is a list of dictionaries with 'appid' and 'name'
 
 def clean_games_list(games_list):
     # List of keywords to exclude
