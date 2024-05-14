@@ -16,23 +16,9 @@ def get_steam_gamesIDs():
     url = f"http://api.steampowered.com/ISteamApps/GetAppList/v2/"
     response = requests.get(url)
     data = response.json()
-    return data['applist']['app']  # This is a list of dictionaries with 'appid' and 'name'
+    return data['applist']  # This is a list of dictionaries with 'appid' and 'name'
 
-def clean_games_list(games_list):
-    # List of keywords to exclude
-    excluded = ['test', 'client', 'server', 'soundtrack', 'demo']
-    
-    # RegEx pattern for checking European characters
-    european_chars_pattern = re.compile(r'^[a-zA-Z0-9 \-\'!@#$%^&*()_+={}[\]|\\:;"<>,.?/~`€£±§]+$')
-    
-    # Filter the list by removing dictionaries whose 'name' is empty,
-    # contains 'test', 'client', 'server', 'soundtrack', or non-European characters.
-    filtered_games = [
-        game for game in games_list 
-        if game['name'] and all(exclude not in game['name'].lower() for exclude in excluded)
-        and european_chars_pattern.match(game['name'])
-    ]
-    return filtered_games
+
 
 def find_games_by_term(games, term):
     # Check if the term is contained in the 'name' of each dictionary. Ignore case sensitivity.
@@ -102,8 +88,3 @@ def fetch_all_reviews(app_id):
 # SteamTopseller
 
 ###########################################################################
-
-def save_data_to_json(data, file_path):
-    with open(file_path, 'w') as file:
-        json.dump(data, file)
-    return file_path
