@@ -1,0 +1,64 @@
+Pandas:
+Installation: pip install pandas
+Documentation: https://pandas.pydata.org/pandas-docs/stable/
+
+NumPy:
+Installation: pip install numpy
+Documentation: https://numpy.org/doc/
+
+Matplotlib:
+Installation: pip install matplotlib
+Documentation: https://matplotlib.org/stable/contents.html
+
+Seaborn:
+Installation: pip install seaborn
+Documentation: https://seaborn.pydata.org/
+
+scikit-learn:
+Installation: pip install scikit-learn
+Documentation: https://scikit-learn.org/stable/documentation.html
+
+NLTK (Natural Language Toolkit):
+Installation: pip install nltk
+Documentation: https://www.nltk.org/
+
+TextBlob:
+Installation: pip install textblob
+Documentation: https://textblob.readthedocs.io/en/dev/
+
+VADER (Valence Aware Dictionary and sEntiment Reasoner):
+Installation: pip install vaderSentiment
+Documentation: https://github.com/cjhutto/vaderSentiment
+
+PyArrow:
+Installation: pip install pyarrow
+Documentation: https://arrow.apache.org/docs/
+
+RegexpTokenizer from NLTK:
+Installation: Part of the NLTK package
+Documentation: https://www.nltk.org/api/nltk.tokenize.html
+
+Stopwords from NLTK:
+Installation: Part of the NLTK package
+Documentation: https://www.nltk.org/nltk_data/
+
+WordCloud:
+Installation: pip install wordcloud
+Documentation: https://github.com/amueller/word_cloud
+
+selenium:
+Installation: pip install selenium
+Documentation: https://www.selenium.dev/documentation/en/
+
+webdriver_manager:
+Installation: pip install webdriver-manager
+Documentation: https://pypi.org/project/webdriver-manager/
+
+requests:
+Installation: pip install requests
+Documentation: https://docs.python-requests.org/en/master/
+
+polars:
+Installation: pip install polars
+Documentation: https://github.com/pola-rs/polars
+
