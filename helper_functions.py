@@ -223,9 +223,9 @@ def download_and_extract_zip_from_gdrive(gdrive_url, extract_to):
 
 
 # Load data
-def load_data(parquet_dir, json_path, selection_file):
-    reviews = load_parquets(parquet_dir, selection_file)
-    game_details = load_json(json_path)
+def load_data(reviews_dir, game_details_path, selection_file):
+    reviews = load_parquets(reviews_dir, selection_file)
+    game_details = load_json(game_details_path)
     # Integrate game details with reviews
     game_details = game_details.with_column(pl.col("appid").cast(pl.Utf8))
     reviews = reviews.join(game_details, on="appid", how="inner")
