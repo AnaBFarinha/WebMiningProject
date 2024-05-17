@@ -52,21 +52,6 @@ def clean_parquet_files(directory):
                     os.remove(os.path.join(directory, filename))
 
 
-# Function to load and concatenate selected parquet files
-def load_parquets(parquet_dir, selection_file=None):
-    if selection_file:
-        with open(selection_file, "r") as f:
-            selected_appids = set(line.strip() for line in f.readlines())
-        parquet_files = []
-        for appid in selected_appids:
-            parquet_files.extend(glob.glob(f"{parquet_dir}/{appid}_reviews_*.parquet"))
-    else:
-        parquet_files = glob.glob(f"{parquet_dir}/*.parquet")
-
-    dfs = [pl.read_parquet(file) for file in parquet_files]
-    return pl.concat(dfs)
-
-
 def load_json(json_path):
     with open(json_path, "r") as f:
         data = json.load(f)
@@ -152,3 +137,19 @@ def install_requirements(requirements_file="requirements.txt"):
         print(f"Successfully installed packages from {requirements_file}")
     except subprocess.CalledProcessError:
         print(f"Failed to install packages from {requirements_file}")
+
+
+def save_appids_to_txt(appids, output_path, limit=100):
+    """
+    Save a list of appids to a text file.
+
+    Args:
+    appids (list): List of appids to save.
+    output_path (str): Path to the output text file. Default is 'high_review_appids.txt'.
+    limit (int): The maximum number of appids to save. Default is 100.
+    """
+    with open(
+        output_path, "w"
+    ) as file:  # 'w' mode ensures a new file is created or an existing file is overwritten
+        for appid in appids[:limit]:
+            file.write(f"{appid}\n")
