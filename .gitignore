@@ -2,3 +2,4 @@
 *.parquet
 *checkpoint.ipynb
 /data copy
+parquets_df.csv
