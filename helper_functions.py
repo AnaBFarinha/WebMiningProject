@@ -10,6 +10,7 @@ import shutil
 import requests
 from zipfile import ZipFile
 from io import BytesIO
+from sklearn.model_selection import train_test_split
 
 
 def save_data_to_json(data, file_path):
@@ -207,3 +208,16 @@ def download_and_extract_zip_from_gdrive(gdrive_url, extract_to):
         zip_ref.extractall(extract_to)
 
     print(f"Extracted files to {extract_to}")
+
+# Load data
+def load_data(parquet_dir, json_path, selection_file)
+    reviews = load_parquets(parquet_dir, selection_file)
+    game_details = load_json(json_path)
+    # Integrate game details with reviews
+    game_details = game_details.with_column(pl.col('appid').cast(pl.Utf8))
+    reviews = reviews.join(game_details, on='appid', how='inner')
+    
+    # Split the data into train and test sets
+    train_data, test_data = train_test_split(reviews.to_pandas(), test_size=0.2, random_state=42)
+
+    return train_data, test_data
