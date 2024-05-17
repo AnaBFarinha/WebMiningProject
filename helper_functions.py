@@ -58,6 +58,21 @@ def load_json(json_path):
     return pl.DataFrame(data)
 
 
+# Function to load and concatenate selected parquet files
+def load_parquets(parquet_dir, selection_file=None):
+    if selection_file:
+        with open(selection_file, "r") as f:
+            selected_appids = set(line.strip() for line in f.readlines())
+        parquet_files = []
+        for appid in selected_appids:
+            parquet_files.extend(glob.glob(f"{parquet_dir}/{appid}_reviews_*.parquet"))
+    else:
+        parquet_files = glob.glob(f"{parquet_dir}/*.parquet")
+
+    dfs = [pl.read_parquet(file) for file in parquet_files]
+    return pl.concat(dfs)
+
+
 def get_parquets_data_info(parquet_folder_path):
     """
     Process all .parquet files in the specified folder, extracting information from the filenames
