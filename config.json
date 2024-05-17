@@ -1,0 +1,8 @@
+{
+    "variation1": {
+      "parquet_dir": "data/parquets",
+      "json_path": "data/game_details/SteamTopSellers_game_details.json",
+      "selection_file": null,
+      "selection_name": ""
+    }
+  }
