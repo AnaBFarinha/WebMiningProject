@@ -2,11 +2,31 @@ import json
 import os
 import re
 import polars as pl
+import glob
 
 def save_data_to_json(data, file_path):
     with open(file_path, 'w') as file:
         json.dump(data, file)
     return file_path
+
+# Function to load and concatenate selected parquet files
+def load_parquets(parquet_dir, selection_file=None):
+    if selection_file:
+        with open(selection_file, 'r') as f:
+            selected_appids = set(line.strip() for line in f.readlines())
+        parquet_files = []
+        for appid in selected_appids:
+            parquet_files.extend(glob.glob(f"{parquet_dir}/{appid}_reviews_*.parquet"))
+    else:
+        parquet_files = glob.glob(f"{parquet_dir}/*.parquet")
+    
+    dfs = [pl.read_parquet(file) for file in parquet_files]
+    return pl.concat(dfs)
+
+def load_json(json_path):
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+    return pl.DataFrame(data)
 
 def get_parquets_data_info(parquet_folder_path):
     """
