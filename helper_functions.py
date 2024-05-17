@@ -4,6 +4,8 @@ import re
 import polars as pl
 import glob
 from collections import defaultdict
+import subprocess
+import sys
 
 
 def save_data_to_json(data, file_path):
@@ -144,3 +146,20 @@ def get_parquets_data_info(parquet_folder_path):
     parquets_df = pl.DataFrame(data)
 
     return parquets_df
+
+
+def install_requirements(requirements_file="requirements.txt"):
+    """
+    Install the packages listed in the requirements.txt file using pip.
+
+    Args:
+        requirements_file (str): Path to the requirements.txt file. Default is 'requirements.txt'.
+    """
+    try:
+        # Execute the pip command to install the requirements
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", "-r", requirements_file]
+        )
+        print(f"Successfully installed packages from {requirements_file}")
+    except subprocess.CalledProcessError:
+        print(f"Failed to install packages from {requirements_file}")
