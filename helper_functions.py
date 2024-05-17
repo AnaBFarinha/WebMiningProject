@@ -3,11 +3,59 @@ import os
 import re
 import polars as pl
 import glob
+from collections import defaultdict
 
 def save_data_to_json(data, file_path):
     with open(file_path, 'w') as file:
         json.dump(data, file)
     return file_path
+
+def clean_parquet_files(directory):
+    """
+    Clean up .parquet files in the specified directory.
+    
+    - Deletes .parquet files with count ≤ 250.
+    - Ensures only one file with the highest count for each appid is retained.
+    
+    Args:
+        directory (str): The path to the directory containing the .parquet files.
+    """
+    # Regular expression to extract appid and count from filenames
+    pattern = re.compile(r"(\d+)_reviews_(\d+)\.parquet")
+
+    # Dictionary to store the highest count for each appid
+    file_dict = defaultdict(lambda: (0, ""))
+
+    # Step 1: Check all .parquet files and store the file with the highest count for each appid
+    for filename in os.listdir(directory):
+        if filename.endswith(".parquet"):
+            match = pattern.match(filename)
+            if match:
+                appid, count = match.groups()
+                count = int(count)
+                if count > 250 and count > file_dict[appid][0]:
+                    file_dict[appid] = (count, filename)
+
+    # Step 2: Delete all .parquet files that do not have the highest count or count ≤ 250
+    for filename in os.listdir(directory):
+        if filename.endswith(".parquet"):
+            match = pattern.match(filename)
+            if match:
+                appid, count = match.groups()
+                count = int(count)
+                # Delete file if it does not have the highest count or if count ≤ 250
+                if filename != file_dict[appid][1]:
+                    os.remove(os.path.join(directory, filename))
+                    print(f"Deleted: {filename}")
+
+    # Output the files that were kept
+    print("Files kept:")
+    for appid, (count, filename) in file_dict.items():
+        print(f"Kept: {filename} with count: {count}")
+
+# Example usage
+directory = "data/parquets"
+clean_parquet_files(directory)
 
 # Function to load and concatenate selected parquet files
 def load_parquets(parquet_dir, selection_file=None):
