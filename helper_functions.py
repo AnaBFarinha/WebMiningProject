@@ -5,18 +5,20 @@ import polars as pl
 import glob
 from collections import defaultdict
 
+
 def save_data_to_json(data, file_path):
-    with open(file_path, 'w') as file:
+    with open(file_path, "w") as file:
         json.dump(data, file)
     return file_path
+
 
 def clean_parquet_files(directory):
     """
     Clean up .parquet files in the specified directory.
-    
+
     - Deletes .parquet files with count ≤ 250.
     - Ensures only one file with the highest count for each appid is retained.
-    
+
     Args:
         directory (str): The path to the directory containing the .parquet files.
     """
@@ -53,28 +55,32 @@ def clean_parquet_files(directory):
     for appid, (count, filename) in file_dict.items():
         print(f"Kept: {filename} with count: {count}")
 
+
 # Example usage
 directory = "data/parquets"
 clean_parquet_files(directory)
 
+
 # Function to load and concatenate selected parquet files
 def load_parquets(parquet_dir, selection_file=None):
     if selection_file:
-        with open(selection_file, 'r') as f:
+        with open(selection_file, "r") as f:
             selected_appids = set(line.strip() for line in f.readlines())
         parquet_files = []
         for appid in selected_appids:
             parquet_files.extend(glob.glob(f"{parquet_dir}/{appid}_reviews_*.parquet"))
     else:
         parquet_files = glob.glob(f"{parquet_dir}/*.parquet")
-    
+
     dfs = [pl.read_parquet(file) for file in parquet_files]
     return pl.concat(dfs)
 
+
 def load_json(json_path):
-    with open(json_path, 'r') as f:
+    with open(json_path, "r") as f:
         data = json.load(f)
     return pl.DataFrame(data)
+
 
 def get_parquets_data_info(parquet_folder_path):
     """
@@ -87,10 +93,10 @@ def get_parquets_data_info(parquet_folder_path):
     Returns:
     polars.DataFrame: A DataFrame containing the file name, appid, name, and review count.
     """
-    
+
     # Path to the SteamGames.json file
-    steam_games_path = 'data/jsons/SteamGames.json'
-    
+    steam_games_path = "data/jsons/SteamGames.json"
+
     # Function to extract information from the filename
     def extract_info_from_filename(filename):
         match = re.match(r"(\d+)_reviews_(\d+)", filename)
@@ -101,34 +107,38 @@ def get_parquets_data_info(parquet_folder_path):
         return None, None
 
     # Search for all .parquet files in the folder
-    parquet_files = [f for f in os.listdir(parquet_folder_path) if f.endswith('.parquet')]
+    parquet_files = [
+        f for f in os.listdir(parquet_folder_path) if f.endswith(".parquet")
+    ]
 
     # List to store the extracted information
     data = []
 
     # Extract information from the filenames and store it
     for file in parquet_files:
-        file_name = file.split('.')[0]  # Remove the file extension
+        file_name = file.split(".")[0]  # Remove the file extension
         appid, review_count = extract_info_from_filename(file_name)
         if appid is not None and review_count is not None:
-            data.append({'file_name': file, 'appid': appid, 'review_count': review_count})
+            data.append(
+                {"file_name": file, "appid": appid, "review_count": review_count}
+            )
 
     # Load the SteamGames.json file
-    with open(steam_games_path, 'r') as file:
+    with open(steam_games_path, "r") as file:
         steam_games = json.load(file)
 
     # Convert the list of dictionaries to a Polars DataFrame
     steam_games_df = pl.DataFrame(steam_games)
 
     # Convert the DataFrame to a dictionary for fast lookups
-    appid_to_name = steam_games_df.select(['appid', 'name']).to_dict(as_series=False)
+    appid_to_name = steam_games_df.select(["appid", "name"]).to_dict(as_series=False)
 
     # Create a lookup dictionary
-    lookup = dict(zip(appid_to_name['appid'], appid_to_name['name']))
+    lookup = dict(zip(appid_to_name["appid"], appid_to_name["name"]))
 
     # Add the name to the collected data
     for item in data:
-        item['name'] = lookup.get(item['appid'], 'Unknown')
+        item["name"] = lookup.get(item["appid"], "Unknown")
 
     # Create a Polars DataFrame
     parquets_df = pl.DataFrame(data)
