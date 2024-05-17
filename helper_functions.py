@@ -48,18 +48,7 @@ def clean_parquet_files(directory):
                 # Delete file if it does not have the highest count or if count ≤ 250
                 if filename != file_dict[appid][1]:
                     os.remove(os.path.join(directory, filename))
-                    print(f"Deleted: {filename}")
-
-    # Output the files that were kept
-    print("Files kept:")
-    for appid, (count, filename) in file_dict.items():
-        print(f"Kept: {filename} with count: {count}")
-
-
-# Example usage
-directory = "data/parquets"
-clean_parquet_files(directory)
-
+                    
 
 # Function to load and concatenate selected parquet files
 def load_parquets(parquet_dir, selection_file=None):
