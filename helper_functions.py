@@ -63,7 +63,6 @@ def clean_parquet_files(directory):
                     os.remove(os.path.join(directory, filename))
 
 
-# Function to load and concatenate selected parquet files
 def load_parquets(parquet_dir, selection_file=None):
     # Read selected app IDs if a selection file is provided
     if selection_file:
@@ -76,19 +75,54 @@ def load_parquets(parquet_dir, selection_file=None):
         # Otherwise, load all parquet files in the directory
         parquet_files = glob.glob(f"{parquet_dir}/*.parquet")
 
-    # Load all dataframes
-    dfs = [pl.read_parquet(file) for file in parquet_files]
+    # Load all dataframes with error handling
+    dfs = []
+    for file in parquet_files:
+        try:
+            df = pl.read_parquet(file)
+            dfs.append(df)
+        except pl.exceptions.SchemaError as e:
+            print(f"SchemaError loading {file}: {e}")
+        except Exception as e:
+            print(f"Error loading {file}: {e}")
+
+    if not dfs:
+        raise ValueError("No dataframes were loaded successfully.")
+
+    # Unify columns across all dataframes
+    unified_dfs = unify_columns(dfs)
 
     # Concatenate dataframes
-    concatenated_df = pl.concat(dfs)
+    concatenated_df = pl.concat(unified_dfs)
 
     # Replace null values in boolean columns with False
     for col in concatenated_df.columns:
         if concatenated_df[col].dtype == pl.Boolean:
             concatenated_df = concatenated_df.with_column(pl.col(col).fill_null(False))
+        elif concatenated_df[col].dtype == pl.Utf8:
+            concatenated_df = concatenated_df.with_column(pl.col(col).cast(pl.Utf8))
+        elif concatenated_df[col].dtype == pl.Float64:
+            concatenated_df = concatenated_df.with_column(pl.col(col).cast(pl.Float64))
+        elif concatenated_df[col].dtype == pl.Int64:
+            concatenated_df = concatenated_df.with_column(pl.col(col).cast(pl.Int64))
 
     return concatenated_df
 
+def unify_columns(dfs):
+    # Determine all columns present in the dataframes
+    all_columns = set()
+    for df in dfs:
+        all_columns.update(df.columns)
+    
+    # Create a new list of dataframes with unified columns
+    unified_dfs = []
+    for df in dfs:
+        missing_columns = all_columns - set(df.columns)
+        for col in missing_columns:
+            df = df.with_column(pl.lit(None).alias(col))
+        unified_dfs.append(df.select(sorted(all_columns)))  # sort to maintain column order
+    
+    return unified_dfs
 
 def get_parquets_data_info(parquet_folder_path):
     """

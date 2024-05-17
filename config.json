@@ -3,6 +3,49 @@
       "reviews_dir": "data/parquets",
       "game_details_path": "data/game_details/SteamTopSellers_game_details.json",
       "selection_file": null,
-      "selection_name": ""
+      "selection_name": "top_sellers"
+    },
+    "variation2": {
+      "reviews_dir": "data/parquets",
+      "game_details_path": "data/game_details/SteamMostPlayed_game_details.json",
+      "selection_file": null,
+      "selection_name": "most_played"
+    },
+    "variation3": {
+      "reviews_dir": "data/parquets_preprocessed",
+      "game_details_path": "data/game_details/SteamTopSellers_game_details.json",
+      "selection_file": null,
+      "selection_name": "top_sellers_preprocessed"
+    },
+    "variation4": {
+      "reviews_dir": "data/parquets_preprocessed",
+      "game_details_path": "data/game_details/SteamMostPlayed_game_details.json",
+      "selection_file": null,
+      "selection_name": "most_played_preprocessed"
+    },
+    "variation5": {
+      "reviews_dir": "data/parquets_preprocessed",
+      "game_details_path": "data/game_details/SteamTopSellers_game_details.json",
+      "selection_file": "data/selection/low_review_games.txt",
+      "selection_name": "top_sellers_preprocessed_low_review_count"
+    },
+    "variation6": {
+      "reviews_dir": "data/parquets_preprocessed",
+      "game_details_path": "data/game_details/SteamTopSellers_game_details.json",
+      "selection_file": "data/selection/high_review_games.txt",
+      "selection_name": "top_sellers_preprocessed_high_review_count"
+    },
+    "variation7": {
+      "reviews_dir": "data/parquets_preprocessed",
+      "game_details_path": "data/game_details/SteamMostPlayed_game_details.json",
+      "selection_file": "data/selection/low_review_games.txt",
+      "selection_name": "most_played_preprocessed_low_review_count"
+    },
+    "variation8": {
+      "reviews_dir": "data/parquets_preprocessed",
+      "game_details_path": "data/game_details/SteamMostPlayed_game_details.json",
+      "selection_file": "data/selection/high_review_games.txt",
+      "selection_name": "most_played_preprocessed_high_review_count"
     }
+    
   }
