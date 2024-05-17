@@ -19,6 +19,12 @@ def save_data_to_json(data, file_path):
     return file_path
 
 
+def load_json(json_path):
+    with open(json_path, "r") as f:
+        data = json.load(f)
+    return pl.DataFrame(data)
+
+
 def clean_parquet_files(directory):
     """
     Clean up .parquet files in the specified directory.
@@ -57,14 +63,9 @@ def clean_parquet_files(directory):
                     os.remove(os.path.join(directory, filename))
 
 
-def load_json(json_path):
-    with open(json_path, "r") as f:
-        data = json.load(f)
-    return pl.DataFrame(data)
-
-
 # Function to load and concatenate selected parquet files
 def load_parquets(parquet_dir, selection_file=None):
+    # Read selected app IDs if a selection file is provided
     if selection_file:
         with open(selection_file, "r") as f:
             selected_appids = set(line.strip() for line in f.readlines())
@@ -72,10 +73,21 @@ def load_parquets(parquet_dir, selection_file=None):
         for appid in selected_appids:
             parquet_files.extend(glob.glob(f"{parquet_dir}/{appid}_reviews_*.parquet"))
     else:
+        # Otherwise, load all parquet files in the directory
         parquet_files = glob.glob(f"{parquet_dir}/*.parquet")
 
+    # Load all dataframes
     dfs = [pl.read_parquet(file) for file in parquet_files]
-    return pl.concat(dfs)
+
+    # Concatenate dataframes
+    concatenated_df = pl.concat(dfs)
+
+    # Replace null values in boolean columns with False
+    for col in concatenated_df.columns:
+        if concatenated_df[col].dtype == pl.Boolean:
+            concatenated_df = concatenated_df.with_column(pl.col(col).fill_null(False))
+
+    return concatenated_df
 
 
 def get_parquets_data_info(parquet_folder_path):
