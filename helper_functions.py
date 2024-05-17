@@ -6,6 +6,10 @@ import glob
 from collections import defaultdict
 import subprocess
 import sys
+import shutil
+import requests
+from zipfile import ZipFile
+from io import BytesIO
 
 
 def save_data_to_json(data, file_path):
@@ -168,3 +172,38 @@ def save_appids_to_txt(appids, output_path, limit=100):
     ) as file:  # 'w' mode ensures a new file is created or an existing file is overwritten
         for appid in appids[:limit]:
             file.write(f"{appid}\n")
+
+
+def download_and_extract_zip_from_gdrive(gdrive_url, extract_to):
+    # Function to clear the target directory
+    def clear_directory(directory):
+        if os.path.exists(directory):
+            shutil.rmtree(directory)
+        os.makedirs(directory)
+
+    # Extract the file ID from the Google Drive URL
+    def get_gdrive_file_id(url):
+        if "id=" in url:
+            return url.split("id=")[1]
+        elif "drive.google.com/file/d/" in url:
+            return url.split("/d/")[1].split("/")[0]
+        else:
+            raise ValueError("Invalid Google Drive URL")
+
+    # Create the direct download URL
+    file_id = get_gdrive_file_id(gdrive_url)
+    download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+
+    # Clear the target directory
+    clear_directory(extract_to)
+
+    # Download the .zip file
+    response = requests.get(download_url)
+    if response.status_code != 200:
+        raise Exception(f"Failed to download file: Status code {response.status_code}")
+
+    # Extract the .zip file
+    with ZipFile(BytesIO(response.content)) as zip_ref:
+        zip_ref.extractall(extract_to)
+
+    print(f"Extracted files to {extract_to}")
