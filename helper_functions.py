@@ -6,7 +6,6 @@ import glob
 from collections import defaultdict
 import subprocess
 import sys
-import shutil
 import requests
 from zipfile import ZipFile
 from io import BytesIO
@@ -108,21 +107,25 @@ def load_parquets(parquet_dir, selection_file=None):
 
     return concatenated_df
 
+
 def unify_columns(dfs):
     # Determine all columns present in the dataframes
     all_columns = set()
     for df in dfs:
         all_columns.update(df.columns)
-    
+
     # Create a new list of dataframes with unified columns
     unified_dfs = []
     for df in dfs:
         missing_columns = all_columns - set(df.columns)
         for col in missing_columns:
             df = df.with_column(pl.lit(None).alias(col))
-        unified_dfs.append(df.select(sorted(all_columns)))  # sort to maintain column order
-    
+        unified_dfs.append(
+            df.select(sorted(all_columns))
+        )  # sort to maintain column order
+
     return unified_dfs
+
 
 def get_parquets_data_info(parquet_folder_path):
     """
@@ -223,10 +226,11 @@ def save_appids_to_txt(appids, output_path, limit=100):
 
 def download_and_extract_zip_from_gdrive(gdrive_url, extract_to):
     # Function to clear the target directory
-    def clear_directory(directory):
-        if os.path.exists(directory):
-            shutil.rmtree(directory)
-        os.makedirs(directory)
+    def clear_parquet_files(directory):
+        for filename in os.listdir(directory):
+            file_path = os.path.join(directory, filename)
+            if file_path.endswith(".parquet"):
+                os.remove(file_path)
 
     # Extract the file ID from the Google Drive URL
     def get_gdrive_file_id(url):
@@ -242,7 +246,7 @@ def download_and_extract_zip_from_gdrive(gdrive_url, extract_to):
     download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
 
     # Clear the target directory
-    clear_directory(extract_to)
+    # clear_parquet_files(extract_to)
 
     # Download the .zip file
     response = requests.get(download_url)
