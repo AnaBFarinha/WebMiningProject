@@ -10,6 +10,7 @@ import requests
 from zipfile import ZipFile
 from io import BytesIO
 from sklearn.model_selection import train_test_split
+import functools
 
 
 def save_data_to_json(data, file_path):
@@ -18,6 +19,7 @@ def save_data_to_json(data, file_path):
     return file_path
 
 
+@functools.lru_cache(maxsize=None)
 def load_json(json_path):
     with open(json_path, "r") as f:
         data = json.load(f)
@@ -62,28 +64,35 @@ def clean_parquet_files(directory):
                     os.remove(os.path.join(directory, filename))
 
 
+@functools.lru_cache(maxsize=None)
 def load_parquets(parquet_dir, selection_file=None):
-    # Read selected app IDs if a selection file is provided
-    if selection_file:
-        with open(selection_file, "r") as f:
-            selected_appids = set(line.strip() for line in f.readlines())
-        parquet_files = []
-        for appid in selected_appids:
-            parquet_files.extend(glob.glob(f"{parquet_dir}/{appid}_reviews_*.parquet"))
-    else:
-        # Otherwise, load all parquet files in the directory
-        parquet_files = glob.glob(f"{parquet_dir}/*.parquet")
+    """
+    Load all .parquet files from the specified directory, optionally filtering by a selection list.
 
-    # Load all dataframes with error handling
+    Args:
+        parquet_dir (str): The directory containing the .parquet files.
+        selection_file (str, optional): Path to a file containing selected app IDs. Defaults to None.
+
+    Returns:
+        polars.DataFrame: Concatenated DataFrame of all loaded parquet files.
+    """
+    # Load selection list if provided
+    selection_list = None
+    if selection_file:
+        with open(selection_file, "r") as file:
+            selection_list = set(line.strip() for line in file)
+
+    # Load all .parquet files, optionally filtering by selection list
     dfs = []
-    for file in parquet_files:
-        try:
-            df = pl.read_parquet(file)
-            dfs.append(df)
-        except pl.exceptions.SchemaError as e:
-            print(f"SchemaError loading {file}: {e}")
-        except Exception as e:
-            print(f"Error loading {file}: {e}")
+    for file_path in glob.glob(os.path.join(parquet_dir, "*.parquet")):
+        appid = os.path.basename(file_path).split("_")[0]
+        if selection_list is None or appid in selection_list:
+            try:
+                df = pl.read_parquet(file_path)
+                df = df.with_columns([pl.lit(appid).cast(pl.Utf8).alias("appid")])
+                dfs.append(df)
+            except Exception as e:
+                print(f"Failed to load {file_path}: {e}")
 
     if not dfs:
         raise ValueError("No dataframes were loaded successfully.")
@@ -94,32 +103,38 @@ def load_parquets(parquet_dir, selection_file=None):
     # Concatenate dataframes
     concatenated_df = pl.concat(unified_dfs)
 
-    # Replace null values in boolean columns with False
-    for col in concatenated_df.columns:
-        if concatenated_df[col].dtype == pl.Boolean:
-            concatenated_df = concatenated_df.with_column(pl.col(col).fill_null(False))
-        elif concatenated_df[col].dtype == pl.Utf8:
-            concatenated_df = concatenated_df.with_column(pl.col(col).cast(pl.Utf8))
-        elif concatenated_df[col].dtype == pl.Float64:
-            concatenated_df = concatenated_df.with_column(pl.col(col).cast(pl.Float64))
-        elif concatenated_df[col].dtype == pl.Int64:
-            concatenated_df = concatenated_df.with_column(pl.col(col).cast(pl.Int64))
-
     return concatenated_df
 
 
 def unify_columns(dfs):
-    # Determine all columns present in the dataframes
     all_columns = set()
-    for df in dfs:
-        all_columns.update(df.columns)
+    column_types = {}
 
-    # Create a new list of dataframes with unified columns
+    # Gather all column names and their data types
+    for df in dfs:
+        for col in df.columns:
+            if col not in column_types:
+                column_types[col] = df[col].dtype
+            all_columns.add(col)
+
     unified_dfs = []
     for df in dfs:
-        missing_columns = all_columns - set(df.columns)
-        for col in missing_columns:
-            df = df.with_column(pl.lit(None).alias(col))
+        for col in all_columns:
+            if col not in df.columns:
+                # Add the missing column with the appropriate data type
+                if column_types[col] == pl.Utf8:
+                    df = df.with_columns([pl.lit(None).cast(pl.Utf8).alias(col)])
+                elif column_types[col] == pl.Int64:
+                    df = df.with_columns([pl.lit(None).cast(pl.Int64).alias(col)])
+                elif column_types[col] == pl.Float64:
+                    df = df.with_columns([pl.lit(None).cast(pl.Float64).alias(col)])
+                elif column_types[col] == pl.Boolean:
+                    df = df.with_columns([pl.lit(None).cast(pl.Boolean).alias(col)])
+                else:
+                    df = df.with_columns([pl.lit(None).alias(col)])
+            else:
+                # Ensure the existing column has the correct data type
+                df = df.with_columns([df[col].cast(column_types[col]).alias(col)])
         unified_dfs.append(
             df.select(sorted(all_columns))
         )  # sort to maintain column order
@@ -260,17 +275,37 @@ def download_and_extract_zip_from_gdrive(gdrive_url, extract_to):
     print(f"Extracted files to {extract_to}")
 
 
-# Load data
 def load_data(reviews_dir, game_details_path, selection_file):
     reviews = load_parquets(reviews_dir, selection_file)
+
+    # Check if 'appid' column exists in reviews
+    if "appid" not in reviews.columns:
+        raise ValueError("The 'appid' column is not found in the reviews dataframe.")
+
     game_details = load_json(game_details_path)
+
+    # Check if 'appid' column exists in game details
+    if "appid" not in game_details.columns:
+        raise ValueError(
+            "The 'appid' column is not found in the game details dataframe."
+        )
+
     # Integrate game details with reviews
-    game_details = game_details.with_column(pl.col("appid").cast(pl.Utf8))
+    game_details = game_details.with_columns([pl.col("appid").cast(pl.Utf8)])
     reviews = reviews.join(game_details, on="appid", how="inner")
 
     # Split the data into train and test sets
     train_data, test_data = train_test_split(
         reviews.to_pandas(), test_size=0.2, random_state=42
+    )
+
+    # Prepare the data for models
+    train_data = train_data.rename(
+        columns={"user_steamid": "user_id", "appid": "game_id", "votes_up": "rating"}
+    )
+
+    test_data = test_data.rename(
+        columns={"user_steamid": "user_id", "appid": "game_id", "votes_up": "rating"}
     )
 
     return train_data, test_data
@@ -280,3 +315,11 @@ def load_data(reviews_dir, game_details_path, selection_file):
 def load_config():
     with open("config.json", "r") as file:
         return json.load(file)
+
+
+def format_timedelta(td):
+    """Format timedelta to display hours, minutes, and seconds."""
+    total_seconds = int(td.total_seconds())
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{hours}h {minutes}m {seconds}s"

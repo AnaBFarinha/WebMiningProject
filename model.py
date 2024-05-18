@@ -12,6 +12,11 @@ class UserBasedCF:
         self.items = None
 
     def fit(self, train_data):
+        # Handle duplicate entries by aggregating ratings (e.g., taking the mean rating)
+        train_data = (
+            train_data.groupby(["user_id", "game_id"]).rating.mean().reset_index()
+        )
+
         self.user_item_matrix = train_data.pivot(
             index="user_id", columns="game_id", values="rating"
         ).fillna(0)
@@ -50,6 +55,11 @@ class ItemBasedCF:
         self.items = None
 
     def fit(self, train_data):
+        # Handle duplicate entries by aggregating ratings (e.g., taking the mean rating)
+        train_data = (
+            train_data.groupby(["user_id", "game_id"]).rating.mean().reset_index()
+        )
+
         self.item_user_matrix = train_data.pivot(
             index="game_id", columns="user_id", values="rating"
         ).fillna(0)
@@ -88,6 +98,11 @@ class MatrixFactorizationCF:
         self.items = None
 
     def fit(self, train_data):
+        # Handle duplicate entries by aggregating ratings (e.g., taking the mean rating)
+        train_data = (
+            train_data.groupby(["user_id", "game_id"]).rating.mean().reset_index()
+        )
+
         self.user_item_matrix = train_data.pivot(
             index="user_id", columns="game_id", values="rating"
         ).fillna(0)
