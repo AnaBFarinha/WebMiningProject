@@ -1,10 +1,4 @@
 {
-    "variation3": {
-      "reviews_dir": "data/parquets_preprocessed",
-      "game_details_path": "data/game_details_preprocessed/SteamTopSellers_game_details.json",
-      "selection_file": null,
-      "selection_name": "top_sellers_preprocessed"
-    },
     "variation4": {
       "reviews_dir": "data/parquets_preprocessed",
       "game_details_path": "data/game_details_preprocessed/SteamMostPlayed_game_details.json",
